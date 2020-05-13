@@ -27,7 +27,6 @@ import { BondingManager } from '../types/BondingManager_streamflow/BondingManage
 // Handler for NewRound events
 export function newRound(event: NewRoundEvent): void {
   let roundsManager = RoundsManager.bind(event.address)
-  let roundNumber = event.params.round
   let bondingManagerAddress = getBondingManagerAddress(dataSource.network())
   let bondingManager = BondingManager.bind(
     Address.fromString(bondingManagerAddress),
@@ -44,9 +43,12 @@ export function newRound(event: NewRoundEvent): void {
     // reward() for a given round, we store its reward tokens inside this Pool
     // entry in a field called "rewardTokens". If "rewardTokens" is null for a
     // given transcoder and round then we know the transcoder failed to call reward()
-    poolId = makePoolId(currentTranscoder.toHex(), roundNumber.toString())
+    poolId = makePoolId(
+      currentTranscoder.toHex(),
+      event.params.round.toString(),
+    )
     pool = new Pool(poolId)
-    pool.round = roundNumber.toString()
+    pool.round = event.params.round.toString()
     pool.delegate = currentTranscoder.toHex()
     pool.totalStake = transcoder.totalStake
     pool.rewardCut = transcoder.rewardCut
@@ -63,7 +65,7 @@ export function newRound(event: NewRoundEvent): void {
   }
 
   // Create new round
-  round = new Round(roundNumber.toString())
+  round = new Round(event.params.round.toString())
   round.initialized = true
   round.timestamp = event.block.timestamp
   round.length = roundsManager.roundLength()
@@ -72,7 +74,7 @@ export function newRound(event: NewRoundEvent): void {
 
   let protocol = Protocol.load('0') || new Protocol('0')
   protocol.lastInitializedRound = roundsManager.lastInitializedRound()
-  protocol.currentRound = roundNumber.toString()
+  protocol.currentRound = event.params.round.toString()
   protocol.totalActiveStake = bondingManager.getTotalBonded()
   protocol.save()
 
@@ -87,6 +89,6 @@ export function newRound(event: NewRoundEvent): void {
   initializeRound.timestamp = event.block.timestamp
   initializeRound.from = event.transaction.from.toHex()
   initializeRound.to = event.transaction.to.toHex()
-  initializeRound.round = roundNumber.toString()
+  initializeRound.round = event.params.round.toString()
   initializeRound.save()
 }

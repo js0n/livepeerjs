@@ -30,7 +30,6 @@ import {
 // Handler for NewRound events
 export function newRound(event: NewRoundEvent): void {
   let roundsManager = RoundsManager.bind(event.address)
-  let roundNumber = event.params.round
   let bondingManagerAddress = getBondingManagerAddress(dataSource.network())
   let bondingManager = BondingManager.bind(
     Address.fromString(bondingManagerAddress),
@@ -45,7 +44,10 @@ export function newRound(event: NewRoundEvent): void {
   // Iterate over all registered transcoders
   while (EMPTY_ADDRESS.toHex() != currentTranscoder.toHex()) {
     // Update transcoder active state
-    active = bondingManager.isActiveTranscoder(currentTranscoder, roundNumber)
+    active = bondingManager.isActiveTranscoder(
+      currentTranscoder,
+      event.params.round,
+    )
     transcoder.active = active
     transcoder.rewardCut = transcoder.pendingRewardCut
     transcoder.feeShare = transcoder.pendingFeeShare
@@ -58,9 +60,12 @@ export function newRound(event: NewRoundEvent): void {
     // "rewardTokens" is null for a given transcoder and round then we know
     // the transcoder failed to call reward()
     if (active) {
-      poolId = makePoolId(currentTranscoder.toHex(), roundNumber.toString())
+      poolId = makePoolId(
+        currentTranscoder.toHex(),
+        event.params.round.toString(),
+      )
       pool = new Pool(poolId)
-      pool.round = roundNumber.toString()
+      pool.round = event.params.round.toString()
       pool.delegate = currentTranscoder.toHex()
       pool.totalStake = transcoder.totalStake
       pool.rewardCut = transcoder.pendingRewardCut
@@ -78,7 +83,7 @@ export function newRound(event: NewRoundEvent): void {
   }
 
   // Create new round
-  round = new Round(roundNumber.toString())
+  round = new Round(event.params.round.toString())
   round.initialized = true
   round.timestamp = event.block.timestamp
   round.length = roundsManager.roundLength()
@@ -88,7 +93,7 @@ export function newRound(event: NewRoundEvent): void {
   // Update protocol
   let protocol = Protocol.load('0') || new Protocol('0')
   protocol.lastInitializedRound = roundsManager.lastInitializedRound()
-  protocol.currentRound = roundNumber.toString()
+  protocol.currentRound = event.params.round.toString()
   protocol.totalActiveStake = bondingManager.getTotalBonded()
   protocol.save()
 
@@ -103,7 +108,7 @@ export function newRound(event: NewRoundEvent): void {
   initializeRound.timestamp = event.block.timestamp
   initializeRound.from = event.transaction.from.toHex()
   initializeRound.to = event.transaction.to.toHex()
-  initializeRound.round = roundNumber.toString()
+  initializeRound.round = event.params.round.toString()
   initializeRound.save()
 }
 

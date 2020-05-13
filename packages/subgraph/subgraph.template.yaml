@@ -345,3 +345,24 @@ templates:
       eventHandlers:
         - event: Vote(indexed address,uint256)
           handler: vote
+  - kind: ethereum/contract
+    name: ShareTemplate
+    network: {{networkName}}
+    source:
+      abi: BondingManager_streamflow
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      file: ./src/mappings/shareHandlers.ts
+      abis:
+        - name: BondingManager_streamflow
+          file: ./abis/BondingManager_streamflow.json
+        - name: BondingManager_genesis
+          file: ./abis/BondingManager.json
+      entities:
+        - Delegator
+        - Share
+      eventHandlers:
+        - event: Reward(indexed address,uint256)
+          handler: updateShareOnReward
